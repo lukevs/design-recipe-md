@@ -1,91 +1,84 @@
-# Templates: code shape from data shape
+# Templates: derive an inventory from the data
 
-A **template** is the skeleton of a function derived mechanically from the data definition of its main input — before any problem-specific thinking. "The purpose of a template is to express the data definition as a function layout… all important pieces of the data definition must find a counterpart in the template" (HtDP ch. 9). Two functions over the same data class start from the *identical* template; only the hole-filling differs. This is the concrete meaning of "the shape of the data determines the shape of the program."
+A structural template records what the input definition makes available: alternatives, selectors, and recursive substructures. HtDP's derivation appears in [Chapter 9](https://htdp.org/2024-11-6/Book/part_two.html); simultaneous inputs are treated in [Chapter 23](https://htdp.org/2024-11-6/Book/part_four.html).
 
-## The template questions (HtDP ch. 9, Figure 52)
+## Derive the inventory
 
-Ask these of the input's data definition, in order:
+1. Identify the alternatives the function's valid input can take.
+2. Find predicates or patterns that distinguish them.
+3. List the fields available in each structured alternative.
+4. Identify recursive substructures and the natural recursive calls they suggest.
+5. Identify references to other data definitions and the processing contracts those may require.
 
-1. **Does the data definition distinguish among different sub-classes of data?** → "Your template needs as many cond clauses as sub-classes that the data definition distinguishes." (Not fewer — missed case; not more — unreachable branch. "If it has seventeen sub-classes, the cond expression contains seventeen clauses.")
-2. **How do the sub-classes differ from each other?** → "Use the differences to formulate a condition per clause" — a test that identifies each sub-class from the value itself.
-3. **Do any of the clauses deal with structured values?** → "Add appropriate selector expressions to the clause" — every field, listed as available raw material, even ones you suspect you won't need ("the template is an organization schema for everything we know about the data definition, but we may not need all of these pieces for the actual definition").
-4. **Does the data definition use self-references?** → "Formulate 'natural recursions' for the template to represent the self-references of the data definition" — a recursive call at exactly each self-reference position, no more and no fewer.
-5. **Does the data definition refer to some other data definition?** → "Specialize the template for the other data definition. Refer to this template" — i.e., a call to *that* class's function, not inline drilling.
-
-Global constants also belong in the inventory — "they belong to the inventory of things that may contribute to the function definition" (§3.4).
+Global constants and additional arguments may also be available. The inventory is deliberately broader than the final implementation: a function need not use every field, traverse every recursive child, or explicitly branch where an operation works uniformly.
 
 ## Worked shapes
 
-**Enumeration** →
+Enumeration:
 
-```
-fun describe(light):        ; TrafficLight -> String
-  match light:
-    "red":    ...
-    "yellow": ...
-    "green":  ...
-```
-
-**Structure** →
-
-```
-fun process(coord):         ; Coordinate -> ???
-  ... coord.x ... coord.y ...
+```text
+describe : TrafficLight -> String
+describe(light):
+    match light:
+        Red:    ...
+        Yellow: ...
+        Green:  ...
 ```
 
-**Self-referential list** →
+Recursive list:
 
-```
-fun process(items):         ; ListOfX -> ???
-  if items is empty:  ...
-  else:               ... items.first ... process(items.rest) ...
-```
-
-**Tree / mutually referential nest** → one function per data definition, calling each other where the definitions refer to each other:
-
-```
-fun size-entry(e):          ; FileSystemEntry -> Number
-  match e:
-    File(name, size):         ... name ... size ...
-    Directory(name, entries): ... name ... size-entries(entries) ...
-
-fun size-entries(es):       ; List<FileSystemEntry> -> Number
-  if es is empty:  ...
-  else:            ... size-entry(es.first) ... size-entries(es.rest) ...
+```text
+process : List<X> -> Y
+process(items):
+    match items:
+        Empty:             ...
+        Cons(first, rest): ... first ... process(rest) ...
 ```
 
-A data definition with *two* self-references (a binary tree's left and right) yields a template with *two* natural recursions. The arrows in the data definitions and the calls in the templates correspond one-to-one.
+Mutually referential tree and list:
 
-## Trust the natural recursion
+```text
+Entry = File(name, bytes) | Directory(name, List<Entry>)
 
-When filling a hole next to a recursive call, **do not trace the recursion**. Ask only: *the purpose statement says this call returns X for the rest of the input — how do I combine X with this clause's other pieces?* HtDP: "For the natural recursion we assume that the function already works as specified in our purpose statement. This last step is a leap of faith, but… it always works" (it is the induction hypothesis of a proof by induction). Tracing recursion mentally is tinkering; trusting the purpose statement is design.
+process_entry(entry):
+    match entry:
+        File(name, bytes):        ... name ... bytes ...
+        Directory(name, entries): ... name ... process_entries(entries) ...
 
-## Templates in modern languages
+process_entries(entries):
+    match entries:
+        Empty:            ...
+        Cons(first, rest): ... process_entry(first) ... process_entries(rest) ...
+```
 
-- **Pattern matching** (Rust/Python `match`, TS discriminated-union narrowing, sealed classes): the template *is* the match statement; exhaustiveness checking is the compiler enforcing the one-branch-per-clause rule. Prefer these constructs — they machine-check your template. (HtDP's own Intermezzo 3 introduces `match` as exactly this: an abstraction over predicate+selector conditionals.)
-- **Iteration**: `for`/`map`/`filter`/`fold` over a collection is a pre-packaged list template (see `06-abstraction.md`). Using them is not skipping the template — it's recognizing that your template matches a standard one.
-- **Visitors / recursion schemes**: packaged tree templates.
-- **API layering**: a function that reaches through its input (`user.account.plan.limits`) violates question 5 — the `User` template may use `user.account` and must delegate `Account` processing to an `Account` function. (Elsewhere called the Law of Demeter; here it falls out of template discipline.)
+These are incomplete pseudocode templates, not runnable implementations. In final code, a fold or collection traversal can package the list helper. A short-circuiting search may visit only one child.
 
-## Two complex inputs (HtDP ch. 23)
+## Interpret the recursive result
 
-When a function consumes **two** structurally complex arguments, "how to design such functions depends on the relationship between the arguments." There are exactly three cases — decide which *before* coding (§23.5):
+Use the recursive function's purpose to determine what its result means for the substructure. If `count_entries` counts file occurrences below an entry, its recursive result already supplies that count for a child. The current case must combine it correctly.
 
-1. **"If one of the parameters plays a dominant role, think of the other as an atomic piece of data as far as the function is concerned."** Template on the dominant one; the other rides along (and often becomes the base-case answer — e.g., appending: recur on the first list, return the second when the first is empty).
-2. **Synchronized/lockstep** — the parameters "must have the same size… and are processed in a synchronized manner": template on one, take the rest of *both* in the recursion (zip, pairwise wages). The size assumption is stated explicitly, and what happens on mismatch is decided and tested, not defaulted.
-3. **"If there is no obvious connection between the two parameters, you must analyze all possible cases."** Build a **two-dimensional table**: one axis lists the case questions for the first argument, the other axis those for the second. Each cell is a `cond` clause whose condition is the *and* of its row and column conditions; "the examples must cover all possible cases; that is, there must be at least one example per cell in the table." Within a cell, *every* combination of selector expressions is a candidate natural recursion — when several are plausible, run a concrete example through each to decide.
+This assumption rests on valid recursive inputs and well-founded descent. Tracing a concrete example can check the combination; it does not replace the argument for all inputs.
 
-**Simplify after, never instead.** The exhaustive table version often collapses (some conditions are impossible, some checks become redundant) — but derive the full version first and simplify with justified steps. HtDP §23.4: "If we try to find the simple versions of functions directly, we sooner or later fail to take care of a case in our analysis, and we are guaranteed to produce flawed programs." The classic production bug is writing case-1 code for a case-3 problem and meeting the missing cells in production.
+## Two complex inputs
 
-## What templates prevent
+Decide how the inputs relate:
 
-- **Missed cases**: the empty list, the `null` variant, the enum value added last quarter. The template forces every clause into view before logic distracts you.
-- **Improvised control flow**: nested `if`s that reflect the order thoughts occurred rather than the structure of the data.
-- **Structure-blind code**: string-munging a URL instead of parsing it; regexing JSON instead of traversing it. If the data definition is recursive, flat code over its serialized form will break on nesting.
+- **One drives the traversal.** Appending lists can recurse over the first and return the second at the base. The second argument is treated as an available value rather than independently traversed.
+- **They move in lockstep.** Pairwise processing consumes corresponding elements. State whether unequal lengths are invalid, truncated, padded, or represented as failure; respect the established API.
+- **Their cases interact independently.** Build a case table, such as empty/non-empty against empty/non-empty for merging lists. Decide the behavior of each reachable combination before simplifying the code.
 
-## LLM directives
+Use the table when it reveals otherwise easy-to-miss interactions. More than two inputs require analysis of their relationships, not automatically a full Cartesian enumeration of all values.
 
-- Before writing a function body, derive the template: how many cases does the input's definition have? Where are the self-references and cross-references? Then check drafted code against it — every missing branch is a latent bug.
-- Treat exhaustiveness warnings as template violations, never as noise to suppress with a `default:` branch. When using a language-supplied enumeration with many irrelevant cases, collapsing them into an `else` is acceptable — but as HtDP notes, "this kind of rearrangement is done *after* the function is designed properly."
-- When modifying existing code, first identify which template the function follows (or fails to follow). A fix that respects the template is small; a fix bolted onto a template violation should trigger a proposal to restructure.
-- Templates are also a performance discipline: HtDP's Intermezzo 5 notes that swapping the template's O(1) predicates/selectors for whole-structure operations (like recomputing a length in every condition) "may shift performance from one class of functions to one that is much worse."
+## Translate into the host language
+
+Matches, loops, comprehensions, visitors, and standard collection operations can embody the same structure. Check the actual language's guarantees: Python `match` does not generally provide compile-time exhaustiveness; TypeScript narrowing alone does not reject every omitted variant.
+
+A grouped branch is valid when its alternatives share specified behavior. A catch-all is suspect when it hides a newly added variant that needs distinct behavior. Invalid inputs need explicit handling only where the contract includes them.
+
+A nested field access does not automatically violate the recipe. Delegate when the nested value requires its own traversal, domain reasoning, reusable operation, or private interface. Adding a helper solely for each field access creates indirection without strengthening the design.
+
+## Check the implementation
+
+Ask whether each relevant case is accounted for explicitly, by a proven precondition, or by a reused abstraction. Check recursive calls for descent and contract preservation.
+
+Review costs as well as shape. Repeated slicing or length calculation may turn a linear traversal into quadratic work. Language recursion limits and absent tail-call optimization can make an iterative implementation preferable even when the reasoning is structural.

@@ -1,46 +1,51 @@
-# The LLM quality checklist
+# Quality checklist for coding agents
 
-The operational distillation of everything in this folder. Run it on every piece of code you produce. It is ordered: the early items are cheap and prevent the expensive failures.
+Use the applicable items as a final design review. This checklist is a modern adaptation of the recipes, not a requirement to create every artifact or test category for every edit.
 
-## Before writing code
+## Before implementation
 
-- [ ] **Data first.** Can you state the data definition of every input and output — fields, types, units, invariants, and which values are impossible? If any parameter is "a dict/object/some JSON", stop and pin it down (read the schema, the type, the upstream producer).
-- [ ] **Signature.** Written, with the most specific data definitions available. Failure cases represented explicitly (result types, documented exceptions) — not magic values.
-- [ ] **Purpose statement.** One sentence, *what* not *how*. Contains no "and". If it needs "and", split the function first.
-- [ ] **Examples before body.** Concrete input→output pairs, computed by hand from the problem statement: at least one per clause of every input's data definition, plus every interval boundary. If you cannot compute an expected output by hand, you don't understand the problem — re-read the source material or ask; do not guess.
-- [ ] **Wish list for multi-function work.** Names + signatures + purpose statements for the whole decomposition before any body. This is the plan a human can veto cheaply.
+- [ ] The requested behavior and scope are clear; material assumptions are distinguished from requirements.
+- [ ] Relevant existing types, schemas, callers, and tests have been inspected.
+- [ ] Inputs and results have understandable representations, interpretations, and important constraints.
+- [ ] The signature and purpose cover the behavior, meaningful preconditions, failures, and effects.
+- [ ] Expected examples are derived independently of the implementation and distinguish the changed behavior.
+- [ ] Missing collaborators or stages have useful contracts; existing helpers have been considered.
 
-## While writing code
+## During implementation
 
-- [ ] **Template check.** The body's case analysis matches the input's data definition: one branch per variant, empty/null/missing cases present, recursion (or delegation) exactly where the data definition references another definition. No improvised control flow.
-- [ ] **Two complex inputs?** Consciously picked: one drives / lockstep / full case matrix. Mismatch cases (different lengths, absent keys) decided and tested, not defaulted.
-- [ ] **One task per function.** Vague names (`process`, `handle`, `doStuff`) are a design alarm, not a naming problem.
-- [ ] **Helpers where the rules demand them**: field of another data definition → delegate; domain shift → new function; stage-then-stage → compose; different traversal → separate function.
-- [ ] **Reuse before reinvention.** Searched the codebase (and the standard library) for the existing helper/abstraction before writing a new one. Standard shapes use standard tools (`map`/`filter`/`fold`/comprehension) rather than hand-rolled loops.
-- [ ] **Abstract only from two working instances.** No speculative generality; no copy-paste-tweak left standing either.
-- [ ] **Every loop/recursion classified.** Structural (shape follows the data — termination free) or generative (write the four questions and a termination argument: what measure strictly decreases?). Any loop with no decreasing measure gets an explicit bound and defined behavior at the bound.
-- [ ] **Every mutated variable has an invariant** you can state: what it means at the top of each iteration relative to input consumed. Accumulator invariants written as comments.
-- [ ] **State minimized and fenced.** Pure functions compute decisions; a thin shell applies effects. Mutable state has a data definition, named invariants, and a closed set of mutating operations.
-- [ ] **Boundaries validate, interiors trust.** Validation happens once, where data enters; no scattered defensive re-checks; errors assign blame (which promise, which side, what data).
+- [ ] Relevant variants, boundaries, and relationships between inputs are accounted for.
+- [ ] The structure follows a justified strategy: structural processing, composition, reuse, or generated subproblems.
+- [ ] Recursive calls preserve their contracts and make progress through a well-founded domain.
+- [ ] Generative algorithms explain their subproblems, combination, and termination or specified stopping behavior.
+- [ ] Accumulator and state invariants explain initialization, updates, and use of the result.
+- [ ] Intentionally continuing processes have lifecycle and cancellation behavior appropriate to the request.
+- [ ] Helpers and abstractions have cohesive contracts and fit repository conventions.
+- [ ] Effects, ownership, validation responsibility, and concurrency assumptions are clear where relevant.
+- [ ] Costs fit the expected input size; library operations and the host language's limits have been considered.
 
-## After writing code
+## After implementation
 
-- [ ] **Every example became an executable test**, plus cases discovered during coding. They run and pass — actually run, not "should pass."
-- [ ] **Failing test triage**: decided whether the test or the code is wrong by recomputing the example by hand — never by editing the expectation to match the output.
-- [ ] **Debugging is descent, not archaeology.** For a misbehaving program: write a failing test for the top-level function, then derive tests for each function it mentions, and recurse into the one that fails (HtDP Epilogue). Fix at the step whose artifact is wrong.
-- [ ] **Case coverage audit.** Diff the tests against the data definitions: every variant, every boundary, both sides of every mismatch case. Exhaustiveness warnings are template violations, not noise.
-- [ ] **Code-walk test.** Could you defend every line aloud? Every branch justified by a data definition clause; every constant named; every fact of the system in exactly one place; no reaching through representations.
-- [ ] **The artifacts shipped with the code**: types/signatures in the language's syntax, purpose statements as doc comments, invariants and termination arguments as comments, examples as tests. The recipe's products are the deliverable, not scaffolding to discard.
-- [ ] **Honest status report.** Anything skipped (untested path, unhandled case, assumed invariant) is stated explicitly to the requester, not left for production to discover.
+- [ ] Relevant checks actually ran, and their results are recorded accurately.
+- [ ] Failures were resolved by checking the specification, implementation, expectations, and environment.
+- [ ] Coverage includes meaningful changed cases and interactions; passing tests are not presented as proof.
+- [ ] The diff is scoped, with no accidental API changes, deployable stubs, or unexplained behavioral changes.
+- [ ] Useful types, tests, purpose statements, and non-obvious invariants remain available to future readers.
+- [ ] The report states what changed, what was verified, and any material unresolved limits.
 
-## The three questions that catch most LLM-generated bugs
+## For a small change
 
-If the full checklist is too much for a small change, never skip these:
+Focus on three questions:
 
-1. **What are all the cases of the input, and does the code visibly handle each one?** (empty, null, zero, missing key, unexpected variant)
-2. **Why does every loop terminate?** (name the decreasing measure or the bound)
-3. **Did I predict the outputs before running, and did I actually run them?** (examples → tests → executed)
+1. What behavior or assumption changes, and which example distinguishes it?
+2. What cases and invariants does the edit need to preserve?
+3. What existing or new verification provides meaningful evidence?
 
-## The disposition behind the checklist
+An existing type and a targeted regression check may be enough. Do not add a test that merely repeats the code without exercising an independent behavior or invariant.
 
-Felleisen's deepest lesson is not any single step; it is that **plausibility is not correctness** — and that **working programs can be justifiably bad** (JFP 2004). "It works!" is "the shortest lie in computing." An LLM's native failure mode is emitting code that pattern-matches on having-seen-similar-code — the industrialized version of the tinkering HtDP was written to abolish. The recipe's artifacts (data definitions, signatures, purposes, examples, invariants, termination arguments) are precisely the things pattern-matching does not supply and cannot fake: each one is a falsifiable commitment about *this* problem. Produce them, and the quality bar rises from "looks right" to "is right, and here is the evidence."
+## For a review
+
+Explain concrete findings with locations, consequences, and a reproducing example when possible. Separate observed defects from conditional risks and unanswered questions. If execution was unavailable, distinguish inspection from tested behavior.
+
+Use the recipe to identify the missing or incorrect decision: representation, contract, example, traversal, combination, or verification. A naming preference or lack of a standalone template is not by itself a defect.
+
+The underlying emphasis on design review and communication comes from [HtDP's Epilogue](https://htdp.org/2024-11-6/Book/part_epilogue.html). Logs, tracing, and debugging are useful evidence-gathering tools alongside examples and contract analysis.

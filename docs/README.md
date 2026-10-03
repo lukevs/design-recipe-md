@@ -1,55 +1,47 @@
-# Systematic software design (HtDP for LLMs)
+# Systematic program design: reference index
 
-A structured, language-agnostic distillation of Matthias Felleisen's teachings on software design — primarily *How to Design Programs* (HtDP, 2nd ed., Felleisen, Findler, Flatt, Krishnamurthi) plus the surrounding PLT pedagogy. It is written for LLMs (and humans) who write software: follow these documents as a working discipline, not background reading.
+This collection adapts *How to Design Programs* (HtDP), second edition, by Matthias Felleisen, Robert Bruce Findler, Matthew Flatt, and Shriram Krishnamurthi, for coding agents working in modern repositories.
 
-## The core claim
+The [skill entry point](../SKILL.md) contains the working discipline and routes to these references. Load lessons according to the task; a human reader can follow the numbered sequence.
 
-Most bad software — human- or LLM-written — comes from **tinkering**: guessing at code, running it, and patching symptoms until output looks right. Felleisen's answer is that program design can be a *systematic, teachable process*: every function is derived from an analysis of the data it consumes, examples are written before code, and the shape of the code is dictated by the shape of the data. When the process is followed, correctness stops being luck.
+## Lessons
 
-> "The typical course on programming teaches a 'tinker until it works' approach. When it works, students exclaim 'It works!' and move on. Sadly, this phrase is also the shortest lie in computing, and it has cost many people many hours of their lives." — HtDP, Preface
-
-> "By 'good programming,' we mean an approach to the creation of software that relies on systematic thought, planning, and understanding from the very beginning, at every stage, and for every step." — HtDP, Preface
-
-## How an LLM should use this folder
-
-1. **Before writing any function**: apply the design recipe (`02-the-design-recipe.md`). No exceptions for "simple" functions — the recipe is cheap when the function is simple.
-2. **Before writing any function, decide what the data is** (`03-data-definitions.md`). If you can't state the data definition, you don't understand the problem yet.
-3. **Derive the code skeleton from the data** (`04-templates.md`), then fill it in.
-4. When a problem needs many functions, **maintain a wish list** and give every function one task (`05-composing-functions.md`).
-5. When two definitions look alike, **abstract deliberately** (`06-abstraction.md`).
-6. When structural processing of the input can't express the algorithm, switch consciously to **generative recursion** and add a termination argument (`07-generative-recursion.md`).
-7. When a recursive traversal loses knowledge of its context, add an **accumulator with a stated invariant** (`08-accumulators.md`).
-8. Contain **state and mutation** behind clear boundaries with stated invariants (`09-state-and-boundaries.md`).
-9. Before declaring anything done, run the **quality checklist** (`10-llm-quality-checklist.md`).
-
-## Contents
-
-| File | What it teaches |
+| Reference | Read when |
 |---|---|
-| `01-core-philosophy.md` | Design vs. tinkering; why the process matters more than the output |
-| `02-the-design-recipe.md` | The six-step recipe every function follows |
-| `03-data-definitions.md` | The taxonomy of data and how data analysis drives design |
-| `04-templates.md` | Mechanically deriving code structure from data structure |
-| `05-composing-functions.md` | Wish lists, helper rules, one function per task |
-| `06-abstraction.md` | The abstraction recipe; higher-order thinking |
-| `07-generative-recursion.md` | Algorithms, the four questions, termination |
-| `08-accumulators.md` | Context loss and accumulator invariants |
-| `09-state-and-boundaries.md` | State, contracts, and interface discipline |
-| `10-llm-quality-checklist.md` | The operational checklist to run on every piece of code |
+| [01 — Core philosophy](01-core-philosophy.md) | Understanding inspectable design and its limits |
+| [02 — Function design recipe](02-the-design-recipe.md) | Designing a function or identifying a missing design step |
+| [03 — Data definitions](03-data-definitions.md) | Choosing or reconstructing representations and constraints |
+| [04 — Templates](04-templates.md) | Analyzing cases, recursive structures, or multiple inputs |
+| [05 — Composition](05-composing-functions.md) | Defining collaborators or intermediate representations |
+| [06 — Abstraction](06-abstraction.md) | Discovering reuse or selecting an existing operation |
+| [07 — Generative recursion](07-generative-recursion.md) | Generating subproblems, searching, or reasoning about progress |
+| [08 — Accumulators](08-accumulators.md) | Carrying context and deriving invariant-preserving updates |
+| [09 — State and boundaries](09-state-and-boundaries.md) | Designing transitions, effects, or validation responsibility |
+| [10 — Quality checklist](10-llm-quality-checklist.md) | Checking an implementation or conducting a review |
 
-## Sources
+## Source map
 
-Primary (read directly during the preparation of these documents):
+Primary source: [HtDP, second edition, online release of November 6, 2024](https://htdp.org/2024-11-6/Book/index.html).
 
-- *How to Design Programs*, 2nd edition (Felleisen, Findler, Flatt, Krishnamurthi; MIT Press) — free online edition: https://htdp.org/2024-11-6/Book/index.html — Preface, Prologue, Parts I–VI, Intermezzos, Epilogue
-- "The Structure and Interpretation of the Computer Science Curriculum", *J. Functional Programming* 14(4), 2004 — https://www2.ccs.neu.edu/racket/pubs/jfp2004-fffk.pdf
-- Felleisen's essays: "Developing Developers" and "The Design Recipe" — https://felleisen.org/matthias/Thoughts/
-- Northeastern CS4500 Software Development course materials (code walks, interfaces, maintenance) — https://felleisen.org/matthias/
-- Findler & Felleisen, "Contracts for Higher-Order Functions", ICFP 2002; Racket Guide, "Contracts and Boundaries" — https://docs.racket-lang.org/guide/contract-boundaries.html
-- Friedman & Felleisen, *The Little Schemer* — the Ten Commandments
+| Topic | Book location |
+|---|---|
+| Intermediate products and the six-step recipe | [Preface, Figure 1](https://htdp.org/2024-11-6/Book/part_preface.html) |
+| Function design, wish lists, world programs, and initial data forms | [Part I, §§3.1–3.6, Chapters 4–6](https://htdp.org/2024-11-6/Book/part_one.html) |
+| Self-referential data, natural recursion, and helper design | [Part II, Chapters 8–11](https://htdp.org/2024-11-6/Book/part_two.html) |
+| Abstraction from examples and templates; using abstractions | [Part III, Chapters 15–16](https://htdp.org/2024-11-6/Book/part_three.html) |
+| Intertwined data, refinement, and simultaneous processing | [Part IV, Chapters 19–20 and 23](https://htdp.org/2024-11-6/Book/part_four.html) |
+| Generative recipe, termination, and search | [Part V, Chapters 26 and 29](https://htdp.org/2024-11-6/Book/part_five.html) |
+| Context and accumulator invariants | [Part VI, Chapters 31–34](https://htdp.org/2024-11-6/Book/part_six.html) |
+| Review, debugging, and communication | [Epilogue](https://htdp.org/2024-11-6/Book/part_epilogue.html) |
 
-Derived:
+Related primary source for boundary contracts: [Racket Guide, Contracts and Boundaries](https://docs.racket-lang.org/guide/contract-boundaries.html).
 
-- Gregor Kiczales, *How to Code* / Systematic Program Design (UBC CPSC 110 / edX), which operationalizes HtDP as the HtDF/HtDD/HtDW recipes and the four helper rules
+## Attribution and adaptation
 
-All principles are language-agnostic. Examples use neutral pseudocode; everything applies equally to Python, TypeScript, Go, Rust, or any other language.
+The lessons summarize and paraphrase the design ideas; they are not quotations from, a reproduction of, or a substitute for the book and its exercises.
+
+HtDP supplies the function recipes, data analysis, structural templates, wish lists, abstraction methods, generative recursion, accumulator reasoning, and world-state modeling.
+
+The repository's guidance on proportional artifacts, existing-code repairs, language-specific behavior, testing methods beyond exact examples, lifecycle management, mutable ownership, transactions, and security boundaries is editorial adaptation. Racket's runtime contract system is related work, not part of HtDP's six-step function recipe.
+
+Templates and contract examples use labeled pseudocode. The complete examples in the generative-recursion and accumulator lessons use Python. Translate their reasoning into the target language's actual APIs, types, evaluation order, and performance model.
